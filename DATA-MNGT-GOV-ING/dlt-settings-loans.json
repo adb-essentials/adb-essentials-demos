@@ -1,0 +1,35 @@
+{
+    "id": "2c2b7f47-1a61-4a14-a041-891802357369",
+    "name": "ADB Essentials - Loans stats",
+    "storage": "/mnt/amineben",
+    "clusters": [
+        {
+            "label": "default",
+            "spark_conf": {
+                "spark.databricks.io.parquet.nativeReader.enabled": "false"
+            },
+            "node_type_id": "Standard_D3_v2",
+            "driver_node_type_id": "Standard_D3_v2",
+            "num_workers": 4
+        },
+        {
+            "label": "maintenance",
+            "spark_conf": {
+                "spark.databricks.io.parquet.nativeReader.enabled": "false"
+            },
+            "node_type_id": "Standard_L4s",
+            "driver_node_type_id": "Standard_L4s",
+            "num_workers": 4
+        }
+    ],
+    "libraries": [
+        {
+            "notebook": {
+                "path": "/Repos/amine.benhamza@databricks.com/adb-essentials-emea/DLT-Pipelines-Loans"
+            }
+        }
+    ],
+    "target": "delta_adb_essentials",
+    "continuous": true,
+    "development": true
+}
