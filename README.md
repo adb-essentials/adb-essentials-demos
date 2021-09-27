@@ -4,4 +4,9 @@ Demos showcased in the [Azure Databricks Essentials webinar](https://databricks.
 
 ![img](adb-lakehouse-platform.png)
 
+- Data Management & Governance
+- BI & SQL Analytics
+- Real-time Data Applications
+- [Data Science & Machine Learning](ML)
+
 
