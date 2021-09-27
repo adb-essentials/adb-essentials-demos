@@ -1,2 +1,5 @@
-# adb-essentials-demos
-ADB Essentials Demos used in the webinars
+# Azure Databricks Essentials Demos
+
+Demos showcased in the [Azure Databricks Essentials webinar](https://databricks.com/p/webinar/azure-databricks-essentials-series)
+
+
