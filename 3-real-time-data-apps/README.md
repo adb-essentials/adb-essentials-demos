@@ -4,3 +4,24 @@
 
 1. Create cluster with DBR version 8.3 or above
 2. Clone this repo or download the notebook files 
+
+## Create Stream of Events in Kafka
+
+Use notebook 3.1 to generate stream of events and send to Kafka topic on Event Hubs
+
+## Create Delta Live Table Pipeline
+
+Go to Jobs > Delta Live Tables > Create Pipeline
+
+Use the following settings to creae
+
+- name: "ADB Essentials Lending Club Streaming"
+- notebooks: 
+-- path: "/Repos/your@email.com/adb-essentials-emea/3.2 - Lending Club DLT Part 1 - Python"
+-- path: "/Repos/your@email.com/adb-essentials-emea/3.3 - Lending Club DLT Part 2 - SQL"
+- target: "delta_adb_essentials_dlt"
+- continuous: true
+
+## Query Tables Created
+
+Run the notebook 3.4 to check that the tables have all been created correctly
