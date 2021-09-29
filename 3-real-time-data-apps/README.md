@@ -29,3 +29,8 @@ If there are no errors deploy to production using the production button in the t
 ## Query Tables Created
 
 Run the notebook 3.4 to check that the tables have all been created correctly
+
+# Useful Links
+
+- [Delta Live Tables quickstart](https://docs.microsoft.com/en-us/azure/databricks/data-engineering/delta-live-tables/delta-live-tables-quickstart)
+- [Use Azure Event Hubs from Apache Kafka applications](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-for-kafka-ecosystem-overview)
