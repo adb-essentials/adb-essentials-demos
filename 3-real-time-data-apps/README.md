@@ -17,10 +17,14 @@ Use the following settings to creae
 
 - name: "ADB Essentials Lending Club Streaming"
 - notebooks: 
--- path: "/Repos/your@email.com/adb-essentials-emea/3.2 - Lending Club DLT Part 1 - Python"
--- path: "/Repos/your@email.com/adb-essentials-emea/3.3 - Lending Club DLT Part 2 - SQL"
+  - path: "/Repos/your@email.com/adb-essentials-demos/3.2 - Lending Club DLT Part 1 - Python"
+  - path: "/Repos/your@email.com/adb-essentials-demos/3.3 - Lending Club DLT Part 2 - SQL"
 - target: "delta_adb_essentials_dlt"
 - continuous: true
+
+## Deploy to production 
+
+If there are no errors deploy to production using the production button in the top right corner
 
 ## Query Tables Created
 
