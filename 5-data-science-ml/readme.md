@@ -9,7 +9,6 @@
 [Databricks AutoML](https://docs.microsoft.com/en-us/azure/databricks/applications/machine-learning/automl)
 
 [Fashion MNIST notebook used for demo](https://github.com/tensorflow/docs/blob/master/site/en/tutorials/keras/classification.ipynb)
-
 If [Databricks Autologging](https://docs.microsoft.com/en-us/azure/databricks/applications/mlflow/databricks-autologging) is not available in your region yet, you can activate it as follows:
-`<import mlflow
-mlflow.autolog()>`
+```<import mlflow
+mlflow.autolog()>```
