@@ -1,0 +1,28 @@
+{
+    "name": "ADB Essentials - Loans Events Streaming",
+    "storage": "abfss://data@dltdemo<storageaccountname>.dfs.core.windows.net/dlt/delta_adb_essentials_<username>",
+    "clusters": [
+        {
+            "label": "default",
+            "spark_conf": {
+                "spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net": "{{secrets/access_creds/adlsDltDemoStorageAccessKey}}"
+            },
+            "num_workers": 2
+        }
+    ],
+    "libraries": [
+        {
+            "notebook": {
+                "path": "/Repos/user.name@company.com/adb-essentials-demos/3-real-time-data-apps/3.2 - Lending Club DLT Part 1 - Python"
+            }
+        },
+        {
+            "notebook": {
+                "path": "/Repos/user.name@company.com/adb-essentials-demos/3-real-time-data-apps/3.3 - Lending Club DLT Part 2 - SQL"
+            }
+        }
+    ],
+    "target": "delta_adb_essentials_<username>",
+    "continuous": true,
+    "development": true
+}

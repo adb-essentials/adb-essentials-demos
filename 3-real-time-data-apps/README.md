@@ -1,13 +1,12 @@
 # Real-time Data Applications 
 
-## Set-up demo enviroment 
+## Set up environment
 
-1. Create cluster with DBR version 8.3 or above
-2. Clone this repo or download the notebook files 
+Follow instructions in [SET-UP-ENVIROMENT.md](../SET-UP-ENVIROMENT.md) to create ADLS storage account and Event Hubs Kafka topic
 
 ## Create Stream of Events in Kafka
 
-Use notebook 3.1 to generate stream of events and send to Kafka topic on Event Hubs
+Use notebook 3.1 to generate stream of events that will be sent to the to Event Hubs Kafka topic
 
 ## Create Delta Live Table Pipeline
 
@@ -17,10 +16,10 @@ Use the following settings to create the pipeline
 
 - name: "ADB Essentials Lending Club Streaming"
 - notebooks: 
-  - path: "/Repos/your@email.com/adb-essentials-demos/3.2 - Lending Club DLT Part 1 - Python"
-  - path: "/Repos/your@email.com/adb-essentials-demos/3.3 - Lending Club DLT Part 2 - SQL"
-- target: "delta_adb_essentials_dlt"
-- storage: "abfss://data@dltdemostorage.dfs.core.windows.net/adbessentials/delta_adb_essentials_dlt"
+  - path: "/Repos/user.name@company.com/adb-essentials-demos/3-real-time-data-apps/3.2 - Lending Club DLT Part 1 - Python"
+  - path: "/Repos/user.name@company.com/adb-essentials-demos/3-real-time-data-apps/3.3 - Lending Club DLT Part 2 - SQL"
+- target: "delta_adb_essentials_<username>"
+- storage: "abfss://data@dltdemo<storageaccountname>.dfs.core.windows.net/dlt/delta_adb_essentials_<username>"
 - autoscaling: false
 - continuous: true
 
