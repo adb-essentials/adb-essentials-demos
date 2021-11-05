@@ -31,16 +31,8 @@ import json
 
 # COMMAND ----------
 
-lspq_path = "/databricks-datasets/samples/lending_club/parquet/"
-loan_stats = spark.read.parquet(lspq_path)
-df_states = loan_stats.groupBy("addr_state").count()
-states_array = [str(row.addr_state) for row in df_states.filter("count > 1").collect()]
-print(states_array)
-
-# COMMAND ----------
-
 def randomState():
-#   validStates= [u'AR', u'SD', u'MT', u'LA', u'FL']
+  validStates = [u'AZ', u'SC', u'LA', u'MN', u'NJ', u'DC', u'OR', u'VA', u'RI', u'KY', u'WY', u'NH', u'MI', u'NV', u'WI', u'ID', u'CA', u'CT', u'NE', u'MT', u'NC', u'VT', u'MD', u'DE', u'MO', u'IL', u'ME', u'WA', u'ND', u'MS', u'AL', u'IN', u'OH', u'TN', u'NM', u'PA', u'SD', u'NY', u'TX', u'WV', u'GA', u'MA', u'KS', u'CO', u'FL', u'AK', u'AR', u'OK', u'UT', u'HI', u'IA']
   validStates = states_array
   return validStates[random.randint(0,len(validStates)-1)]
 
@@ -101,15 +93,13 @@ display(source_schema)
 # COMMAND ----------
 
 # Get Databricks secret value 
-connSharedAccessKeyName = "KafkaSendListen"
-connSharedAccessKeyName = "adbSendDltDemoLoanEvents"
-# connSharedAccessKey = dbutils.secrets.get(scope = "my_secret_scope", key = "eventHubKafkaKey")
-connSharedAccessKey = dbutils.secrets.get(scope = "adls_creds", key = "ehSendDltDemoLoanEventsAccessKey")
+connSharedAccessKeyName = "adbSendDltDemoLoansEvents"
+connSharedAccessKey = dbutils.secrets.get(scope = "access_creds", key = "ehSendDltDemosLoanEventsAccessKey")
 
 # COMMAND ----------
 
 EH_NAMESPACE = "dlt-demo-eh"
-EH_KAFKA_TOPIC = "loan-events"
+EH_KAFKA_TOPIC = "loans-events"
 EH_BOOTSTRAP_SERVERS = f"{EH_NAMESPACE}.servicebus.windows.net:9093"
 EH_SASL = f"kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"Endpoint=sb://{EH_NAMESPACE}.servicebus.windows.net/;SharedAccessKeyName={connSharedAccessKeyName};SharedAccessKey={connSharedAccessKey};EntityPath={EH_KAFKA_TOPIC}\";"
 
@@ -120,6 +110,10 @@ EH_SASL = f"kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule 
 
 # COMMAND ----------
 
+from datetime import datetime
+# helps avoiding loading and writing all historical data. 
+datetime_checkpoint = datetime.now().strftime('%Y%m%d%H%M%S')
+
 # Write df to EventHubs using Spark's Kafka connector
 write = (source_schema.writeStream
     .format("kafka")
@@ -129,7 +123,7 @@ write = (source_schema.writeStream
     .option("kafka.sasl.mechanism", "PLAIN")
     .option("kafka.security.protocol", "SASL_SSL")
     .option("kafka.sasl.jaas.config", EH_SASL)
-    .option("checkpointLocation", f"/tmp/{EH_NAMESPACE}/{EH_KAFKA_TOPIC}/_checkpoint")
+    .option("checkpointLocation", f"/tmp/{EH_NAMESPACE}/{EH_KAFKA_TOPIC}/{datetime_checkpoint}/_checkpoint")
     .trigger(processingTime='30 seconds')
     .start())
 

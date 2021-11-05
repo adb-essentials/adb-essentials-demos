@@ -13,13 +13,15 @@ Use notebook 3.1 to generate stream of events and send to Kafka topic on Event H
 
 Go to Jobs > Delta Live Tables > Create Pipeline
 
-Use the following settings to creae
+Use the following settings to create the pipeline
 
 - name: "ADB Essentials Lending Club Streaming"
 - notebooks: 
   - path: "/Repos/your@email.com/adb-essentials-demos/3.2 - Lending Club DLT Part 1 - Python"
   - path: "/Repos/your@email.com/adb-essentials-demos/3.3 - Lending Club DLT Part 2 - SQL"
 - target: "delta_adb_essentials_dlt"
+- storage: "abfss://data@dltdemostorage.dfs.core.windows.net/adbessentials/delta_adb_essentials_dlt"
+- autoscaling: false
 - continuous: true
 
 ## Deploy to production 

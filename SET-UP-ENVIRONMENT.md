@@ -99,7 +99,7 @@ databricks secrets put --scope access_creds --key adlsDltDemoStorageAccessKey --
 
 ```
 export EH_NAMESPACE=dlt-demo-eh
-export EH_KAFKA_TOPIC=loan-events
+export EH_KAFKA_TOPIC=loans-events
 ```
 
 ### Create Event Hubs namespace with Kafka enabled
@@ -126,7 +126,7 @@ Send:
 az eventhubs eventhub authorization-rule create \
   --namespace-name $EH_NAMESPACE \
   --eventhub-name $EH_KAFKA_TOPIC \
-  --name adbSendDltDemoLoanEvents \
+  --name adbSendDltDemoLoansEvents \
   --rights Send
 ```
 
@@ -136,7 +136,7 @@ Listen:
 az eventhubs eventhub authorization-rule create \
   --namespace-name $EH_NAMESPACE \
   --eventhub-name $EH_KAFKA_TOPIC \
-  --name adbListenDltDemoLoanEvents \
+  --name adbListenDltDemoLoansEvents \
   --rights Listen
 ```
 
@@ -148,7 +148,7 @@ Send:
 az eventhubs eventhub authorization-rule keys list \
   --namespace-name $EH_NAMESPACE \
   --eventhub-name $EH_KAFKA_TOPIC \
-  --name adbSendDltDemoLoanEvents
+  --name adbSendDltDemoLoansEvents
 ```
 
 Listen:
@@ -157,20 +157,20 @@ Listen:
 az eventhubs eventhub authorization-rule keys list \
   --namespace-name $EH_NAMESPACE \
   --eventhub-name $EH_KAFKA_TOPIC \
-  --name adbListenDltDemoLoanEvents
+  --name adbListenDltDemoLoansEvents
 ```
 
 
 ### Add Event Hubs access key to Databricks secrets
 
 ```
-export SEND_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbSendDltDemoLoanEvents --query 'primaryKey' --output tsv)
-databricks secrets put --scope access_creds --key ehSendDltDemoLoanEventsAccessKey --string-value $SEND_PRIMARY_KEY
+export SEND_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbSendDltDemoLoansEvents --query 'primaryKey' --output tsv)
+databricks secrets put --scope access_creds --key ehSendDltDemoLoansEventsAccessKey --string-value $SEND_PRIMARY_KEY
 ```
 
 ```
-export LISTEN_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbListenDltDemoLoanEvents --query 'primaryKey' --output tsv)
-databricks secrets put --scope access_creds --key ehListenDltDemoLoanEventsAccessKey --string-value $LISTEN_PRIMARY_KEY
+export LISTEN_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbListenDltDemoLoansEvents --query 'primaryKey' --output tsv)
+databricks secrets put --scope access_creds --key ehListenDltDemoLoansEventsAccessKey --string-value $LISTEN_PRIMARY_KEY
 ```
 
 
