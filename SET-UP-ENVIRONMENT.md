@@ -2,10 +2,61 @@
 
 ## Set up Azure CLI
 
-### Define resource group for future az cmds
+Follow the instructions on [how to install the Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
+
+### Define resource group for all Azure CLI cmds
 
 ```
 az configure --defaults group=<your-resource-group>
+```
+
+## Set up Databricks CLI
+
+Follow the instructions on [how to install the Azure Databricks CLI](https://docs.microsoft.com/en-us/azure/databricks/dev-tools/cli/).
+
+### Authenticate against the Databricks CLI
+
+```
+databricks configure --token
+```
+
+### Create secrets scope to be used for ADLS and Event Hubs access keys
+
+```
+databricks secrets create-scope --scope adls_creds
+```
+
+## Set-up Databricks Cluster
+
+### Create Databricks Cluster
+
+```
+databricks clusters create --json-file create-cluster.json
+```
+
+```
+create-cluster.json
+{
+  "cluster_name": "adb-essentials-9-0",
+  "spark_version": "9.0.x-scala2.12",
+  "node_type_id": "Standard_D3_v2",
+  "spark_conf": {
+    "spark.databricks.enableWsfs": false,
+    "spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net": "{{secrets/adls_creds/adlsDltDemoStorageAccessKey}}"
+  },
+  "num_workers": 2
+}
+
+```
+
+
+### Add cluster setting for Repos
+
+Once cluster is created go advanced options > Spark config and check the following settings have been applied:
+
+```
+spark.databricks.enableWsfs false
+spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net {{secrets/adls_creds/adlsDltDemoStorageAccessKey}}
 ```
 
 ## Set up ADLS
@@ -13,14 +64,40 @@ az configure --defaults group=<your-resource-group>
 
 ### Create ADLS gen2 bucket
 
+```
+az storage account create \
+  --name dltdemostorage \
+  --location northeurope \
+  --sku Standard_RAGRS \
+  --kind StorageV2 \
+  --enable-hierarchical-namespace true \
+  --allow-shared-key-access true
+```
+
+```
+az storage fs create -n data --account-name dltdemostorage
+```
+
 ### Add ADLS access key to Databricks secrets
 
+```
+export ADLS_PRIMARY_KEY=$(az storage account keys list --account-name dltdemostorage --query '[0].value' --output tsv)
+databricks secrets put --scope adls_creds --key adlsDltDemoStorageAccessKey --string-value $ADLS_PRIMARY_KEY
+```
+
 ## Set up Event Hubs
+
+### Define namespace name and topic name
+
+```
+export EH_NAMESPACE=dlt-demo-eh
+export EH_KAFKA_TOPIC=loan-events
+```
 
 ### Create Event Hubs namespace with Kafka enabled
 
 ```
-az eventhubs namespace create --name dlt-demo-eh \
+az eventhubs namespace create --name $EH_NAMESPACE \
   --location northeurope \
   --sku standard \
   --enable-kafka
@@ -29,8 +106,8 @@ az eventhubs namespace create --name dlt-demo-eh \
 ### Create Event Hubs Kafka topic (hub)
 
 ```
-az eventhubs eventhub create --name loan-events \
-  --namespace-name dlt-demo-eh
+az eventhubs eventhub create --name $EH_KAFKA_TOPIC \
+  --namespace-name $EH_NAMESPACE
 ```
 
 ### Create Auth rules for send and listen
@@ -39,8 +116,8 @@ Send:
 
 ```
 az eventhubs eventhub authorization-rule create \
-  --namespace-name dlt-demo-eh \
-  --eventhub-name loan-events \
+  --namespace-name $EH_NAMESPACE \
+  --eventhub-name $EH_KAFKA_TOPIC \
   --name adbSendDltDemoLoanEvents \
   --rights Send
 ```
@@ -49,8 +126,8 @@ Listen:
 
 ```
 az eventhubs eventhub authorization-rule create \
-  --namespace-name dlt-demo-eh \
-  --eventhub-name loan-events \
+  --namespace-name $EH_NAMESPACE \
+  --eventhub-name $EH_KAFKA_TOPIC \
   --name adbListenDltDemoLoanEvents \
   --rights Listen
 ```
@@ -60,21 +137,33 @@ az eventhubs eventhub authorization-rule create \
 Send:
 
 ```
-az eventhubs eventhub authorization-rule keys list --namespace-name dlt-demo-eh \
-  --eventhub-name loan-events \
+az eventhubs eventhub authorization-rule keys list \
+  --namespace-name $EH_NAMESPACE \
+  --eventhub-name $EH_KAFKA_TOPIC \
   --name adbSendDltDemoLoanEvents
 ```
 
 Listen:
 
 ```
-az eventhubs eventhub authorization-rule keys list --namespace-name dlt-demo-eh \
-  --eventhub-name loan-events \
+az eventhubs eventhub authorization-rule keys list \
+  --namespace-name $EH_NAMESPACE \
+  --eventhub-name $EH_KAFKA_TOPIC \
   --name adbListenDltDemoLoanEvents
 ```
 
 
 ### Add Event Hubs access key to Databricks secrets
+
+```
+export SEND_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbSendDltDemoLoanEvents --query 'primaryKey' --output tsv)
+databricks secrets put --scope adls_creds --key ehSendDltDemoLoanEventsAccessKey --string-value $SEND_PRIMARY_KEY
+```
+
+```
+export LISTEN_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbListenDltDemoLoanEvents --query 'primaryKey' --output tsv)
+databricks secrets put --scope adls_creds --key ehListenDltDemoLoanEventsAccessKey --string-value $LISTEN_PRIMARY_KEY
+```
 
 
 

@@ -16,11 +16,6 @@
 
 # COMMAND ----------
 
-# Get Databricks secret value 
-connSharedAccessKey = dbutils.secrets.get(scope = "my_secret_scope", key = "eventHubKafkaKey")
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ### Producer
 # MAGIC 
@@ -105,9 +100,18 @@ display(source_schema)
 
 # COMMAND ----------
 
-TOPIC = "kafka-lendingclub"
-BOOTSTRAP_SERVERS = "my-event-hub-kafka.servicebus.windows.net:9093"
-EH_SASL = "kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"Endpoint=sb://my-event-hub-kafka.servicebus.windows.net/;SharedAccessKeyName=KafkaSendListen;SharedAccessKey=" + connSharedAccessKey + "\";"
+# Get Databricks secret value 
+connSharedAccessKeyName = "KafkaSendListen"
+connSharedAccessKeyName = "adbSendDltDemoLoanEvents"
+# connSharedAccessKey = dbutils.secrets.get(scope = "my_secret_scope", key = "eventHubKafkaKey")
+connSharedAccessKey = dbutils.secrets.get(scope = "adls_creds", key = "ehSendDltDemoLoanEventsAccessKey")
+
+# COMMAND ----------
+
+EH_NAMESPACE = "dlt-demo-eh"
+EH_KAFKA_TOPIC = "loan-events"
+EH_BOOTSTRAP_SERVERS = f"{EH_NAMESPACE}.servicebus.windows.net:9093"
+EH_SASL = f"kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule required username=\"$ConnectionString\" password=\"Endpoint=sb://{EH_NAMESPACE}.servicebus.windows.net/;SharedAccessKeyName={connSharedAccessKeyName};SharedAccessKey={connSharedAccessKey};EntityPath={EH_KAFKA_TOPIC}\";"
 
 # COMMAND ----------
 
@@ -120,13 +124,13 @@ EH_SASL = "kafkashaded.org.apache.kafka.common.security.plain.PlainLoginModule r
 write = (source_schema.writeStream
     .format("kafka")
     .outputMode("append")
-    .option("topic", TOPIC)
-    .option("kafka.bootstrap.servers", BOOTSTRAP_SERVERS)
+    .option("topic", EH_KAFKA_TOPIC)
+    .option("kafka.bootstrap.servers", EH_BOOTSTRAP_SERVERS)
     .option("kafka.sasl.mechanism", "PLAIN")
     .option("kafka.security.protocol", "SASL_SSL")
     .option("kafka.sasl.jaas.config", EH_SASL)
-    .option("checkpointLocation", "/tmp/lendingclub-kafka/events/_checkpoint")
-    .trigger(processingTime='120 seconds')
+    .option("checkpointLocation", f"/tmp/{EH_NAMESPACE}/{EH_KAFKA_TOPIC}/_checkpoint")
+    .trigger(processingTime='30 seconds')
     .start())
 
 # COMMAND ----------
