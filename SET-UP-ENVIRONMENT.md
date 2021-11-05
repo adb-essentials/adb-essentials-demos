@@ -23,7 +23,7 @@ databricks configure --token
 ### Create secrets scope to be used for ADLS and Event Hubs access keys
 
 ```
-databricks secrets create-scope --scope adls_creds
+databricks secrets create-scope --scope access_creds
 ```
 
 ## Set-up Databricks Cluster
@@ -42,7 +42,7 @@ create-cluster.json
   "node_type_id": "Standard_D3_v2",
   "spark_conf": {
     "spark.databricks.enableWsfs": false,
-    "spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net": "{{secrets/adls_creds/adlsDltDemoStorageAccessKey}}"
+    "spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net": "{{secrets/access_creds/adlsDltDemoStorageAccessKey}}"
   },
   "num_workers": 2
 }
@@ -56,17 +56,23 @@ Once cluster is created go advanced options > Spark config and check the followi
 
 ```
 spark.databricks.enableWsfs false
-spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net {{secrets/adls_creds/adlsDltDemoStorageAccessKey}}
+spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net {{secrets/access_creds/adlsDltDemoStorageAccessKey}}
 ```
 
 ## Set up ADLS
+
+### Define storage account name
+
+```
+export STORAGE_ACCOUNT=dltdemo<storagename>
+```
 
 
 ### Create ADLS gen2 bucket
 
 ```
 az storage account create \
-  --name dltdemostorage \
+  --name $STORAGE_ACCOUNT \
   --location northeurope \
   --sku Standard_RAGRS \
   --kind StorageV2 \
@@ -74,15 +80,17 @@ az storage account create \
   --allow-shared-key-access true
 ```
 
+### Create container called data in storage account
+
 ```
-az storage fs create -n data --account-name dltdemostorage
+az storage fs create -n data --account-name $STORAGE_ACCOUNT
 ```
 
 ### Add ADLS access key to Databricks secrets
 
 ```
-export ADLS_PRIMARY_KEY=$(az storage account keys list --account-name dltdemostorage --query '[0].value' --output tsv)
-databricks secrets put --scope adls_creds --key adlsDltDemoStorageAccessKey --string-value $ADLS_PRIMARY_KEY
+export ADLS_PRIMARY_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --query '[0].value' --output tsv)
+databricks secrets put --scope access_creds --key adlsDltDemoStorageAccessKey --string-value $ADLS_PRIMARY_KEY
 ```
 
 ## Set up Event Hubs
@@ -157,12 +165,12 @@ az eventhubs eventhub authorization-rule keys list \
 
 ```
 export SEND_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbSendDltDemoLoanEvents --query 'primaryKey' --output tsv)
-databricks secrets put --scope adls_creds --key ehSendDltDemoLoanEventsAccessKey --string-value $SEND_PRIMARY_KEY
+databricks secrets put --scope access_creds --key ehSendDltDemoLoanEventsAccessKey --string-value $SEND_PRIMARY_KEY
 ```
 
 ```
 export LISTEN_PRIMARY_KEY=$(az eventhubs eventhub authorization-rule keys list --namespace-name $EH_NAMESPACE --eventhub-name $EH_KAFKA_TOPIC --name adbListenDltDemoLoanEvents --query 'primaryKey' --output tsv)
-databricks secrets put --scope adls_creds --key ehListenDltDemoLoanEventsAccessKey --string-value $LISTEN_PRIMARY_KEY
+databricks secrets put --scope access_creds --key ehListenDltDemoLoanEventsAccessKey --string-value $LISTEN_PRIMARY_KEY
 ```
 
 
