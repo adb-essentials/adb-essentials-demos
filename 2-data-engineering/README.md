@@ -4,7 +4,7 @@
 
 Follow instructions in [SET-UP-ENVIRONMENT.md](../SET-UP-ENVIRONMENT.md) to create ADLS storage account
 
-## Create Stream of Events in Kafka
+## Create CSV files in ADLS
 
 Use notebook 2.1 to create CSV files in ADLS storage account.
 
