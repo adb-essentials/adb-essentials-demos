@@ -2,7 +2,7 @@
 
 ## Set up environment
 
-Follow instructions in [SET-UP-ENVIROMENT.md](../SET-UP-ENVIROMENT.md) to create ADLS storage account and Event Hubs Kafka topic
+Follow instructions in [SET-UP-ENVIRONMENT.md](../SET-UP-ENVIRONMENT.md) to create ADLS storage account and Event Hubs Kafka topic
 
 ## Create Stream of Events in Kafka
 
