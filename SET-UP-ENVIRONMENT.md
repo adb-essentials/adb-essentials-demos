@@ -1,5 +1,13 @@
 # Set up Azure enviroment
 
+This guide contains the following steps to set up your enviroment for all the demos in this repo.
+
+- Set up Azure CLI
+- Set up Databricks CLI
+- Set-up Databricks Cluster
+- Set up ADLS gen2
+- Set up Event Hubs
+
 ## Set up Azure CLI
 
 Follow the instructions on [how to install the Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
@@ -30,12 +38,9 @@ databricks secrets create-scope --scope access_creds
 
 ### Create Databricks Cluster
 
-```
-databricks clusters create --json-file create-cluster.json
-```
+Create a file called `create-cluster.json` and add the following:
 
 ```
-create-cluster.json
 {
   "cluster_name": "adb-essentials-9-0",
   "spark_version": "9.0.x-scala2.12",
@@ -49,6 +54,12 @@ create-cluster.json
 
 ```
 
+Run the clusters create command to create a cluster in the Databricks workspace.
+
+```
+databricks clusters create --json-file create-cluster.json
+```
+
 
 ### Add cluster setting for Repos
 
@@ -59,12 +70,12 @@ spark.databricks.enableWsfs false
 spark.hadoop.fs.azure.account.key.dltdemostorage.dfs.core.windows.net {{secrets/access_creds/adlsDltDemoStorageAccessKey}}
 ```
 
-## Set up ADLS
+## Set up ADLS gen2
 
 ### Define storage account name
 
 ```
-export STORAGE_ACCOUNT=dltdemo<storagename>
+export STORAGE_ACCOUNT=dltdemo<storageaccountname>
 ```
 
 
