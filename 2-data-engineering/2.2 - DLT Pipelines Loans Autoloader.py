@@ -3,7 +3,11 @@
 import dlt
 from pyspark.sql.types import *
 
-sourceFile = "/adbessentials/loan_stats_csv"
+# source_file_path = "/adbessentials/loan_stats_csv"
+# schema_checkpoint_file_path = "/adbessentials/loan_stats_csv_schema"
+
+source_file_path = "abfss://data@dltdemostorage.dfs.core.windows.net/adbessentials/loan_stats_csv"
+schema_checkpoint_file_path = "abfss://data@dltdemostorage.dfs.core.windows.net/adbessentials/loan_stats_csv_schema"
 
 @dlt.create_table(
   comment="The malware raw data",
@@ -12,7 +16,11 @@ sourceFile = "/adbessentials/loan_stats_csv"
   }
 )
 def loans_stats_stream_bronze():
-  return spark.readStream.format("cloudFiles").option("cloudFiles.format","csv").option("cloudFiles.schemaLocation", "/adbessentials/loan_stats_csv_schema").load(sourceFile)
+  return (spark
+          .readStream.format("cloudFiles")
+          .option("cloudFiles.format","csv")
+          .option("cloudFiles.schemaLocation", schema_checkpoint_file_path)
+          .load(source_file_path))
 
 # COMMAND ----------
 

@@ -1,0 +1,34 @@
+{
+    "name": "ADB Essentials - Loans Streaming",
+    "storage": "abfss://data@dltdemo<storageaccountname>.dfs.core.windows.net/dlt/delta_adb_essentials_<username>",
+    "clusters": [
+        {
+            "label": "default",
+            "spark_conf": {
+                "spark.hadoop.fs.azure.account.key.dltdemo<storageaccountname>.dfs.core.windows.net": "{{secrets/access_creds/adlsDltDemoStorageAccessKey}}"
+            },
+            "node_type_id": "Standard_D3_v2",
+            "driver_node_type_id": "Standard_D3_v2",
+            "num_workers": 4
+        },
+        {
+            "label": "maintenance",
+            "spark_conf": {
+                "spark.hadoop.fs.azure.account.key.dltdemo<storageaccountname>.dfs.core.windows.net": "{{secrets/access_creds/adlsDltDemoStorageAccessKey}}"
+            },
+            "node_type_id": "Standard_L4s",
+            "driver_node_type_id": "Standard_L4s",
+            "num_workers": 4
+        }
+    ],
+    "libraries": [
+        {
+            "notebook": {
+                "path": "/Repos/user.name@company.com/adb-essentials-demos/2-data-engineering/2.2 - DLT Pipelines Loans Autoloader"
+            }
+        }
+    ],
+    "target": "delta_adb_essentials_<username>",
+    "continuous": true,
+    "development": true
+}
