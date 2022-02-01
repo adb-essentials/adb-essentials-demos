@@ -333,6 +333,8 @@ model.compile(optimizer='adam',
 
 # COMMAND ----------
 
+import mlflow
+mlflow.autolog()
 model.fit(train_images, train_labels, epochs=10)
 
 # COMMAND ----------
