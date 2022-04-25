@@ -1,14 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Bulk load data into a Delta table with Auto Loader
+# MAGIC # Ingest files into a Delta table with Auto Loader
 # MAGIC 
 # MAGIC The Databricks Auto Loader incrementally processes new data ariving in a cloud storage location. It can be used together with Spark structured streaming to detects and ingest files as soon as they arrive in cloud storage, or can be run periodically to only add new files.
 # MAGIC 
 # MAGIC Autoloader has two modes:
 # MAGIC 
-# MAGIC **Directory listing**: Allows you to quickly start Auto Loader streams without any permission configurations other than access to your data on cloud storage. Auto Loader automatically detects new files using lexical ordering, which reduces the amount of API calls it needs to make to detect new files.
+# MAGIC **Directory listing**<br>
+# MAGIC Allows you to quickly start Auto Loader streams without any permission configurations other than access to your data on cloud storage. Auto Loader automatically detects new files using lexical ordering, which reduces the amount of API calls it needs to detect new files.
 # MAGIC 
-# MAGIC **File notification**: Auto Loader automatically sets up a notification service and queue service in Azure, that subscribe to file events from the input directory. File notification mode is more performant and scalable for large input directories or a high volume of files but requires additional cloud permissions for set up. Use *.option("cloudFiles.useNotifications","true")*.
+# MAGIC **File notification**<br>
+# MAGIC Auto Loader automatically sets up a notification service and queue service in Azure, that subscribe to file events from the input directory. File notification mode is more performant and scalable for large input directories or a high volume of files but requires additional cloud permissions for set up. Use *.option("cloudFiles.useNotifications","true")*.
 # MAGIC 
 # MAGIC In this demo we are reading csv files containing population data from DBFS and ingest them as Delta files. You can create sample csv files with data shown in the [Auto Loader docs](https://docs.microsoft.com/en-us/azure/databricks/spark/latest/structured-streaming/auto-loader). In production environments an external cloud storage is used instead.
 # MAGIC 
@@ -83,7 +85,7 @@ display(df_population)
 
 # MAGIC %sql
 # MAGIC -- Create an empty, managed table
-# MAGIC CREATE TABLE default.population (
+# MAGIC CREATE TABLE IF NOT EXISTS default.population (
 # MAGIC   city STRING,
 # MAGIC   year INT,
 # MAGIC   population INT
@@ -92,14 +94,10 @@ display(df_population)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- Run the COPY INTO command after new files arrived in the storage location to incrementally add new data
+# MAGIC -- Run the COPY INTO command after new files were uploaded to the storage location to incrementally add new data
 # MAGIC COPY INTO default.population
 # MAGIC FROM '/FileStore/shared_uploads/adb_essentials/population_data_upload'
-# MAGIC FILEFORMAT = CSV
-# MAGIC FORMAT_OPTIONS (
-# MAGIC   'header' = 'true',
-# MAGIC   'inferSchema' = 'true'
-# MAGIC );
+# MAGIC FILEFORMAT = CSV FORMAT_OPTIONS ('header' = 'true','inferSchema' = 'true');
 # MAGIC 
 # MAGIC SELECT * FROM default.population;
 
