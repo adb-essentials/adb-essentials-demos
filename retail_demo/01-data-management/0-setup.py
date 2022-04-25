@@ -2,9 +2,11 @@
 # MAGIC %md
 # MAGIC # Setup 
 # MAGIC 
-# MAGIC We recommend to store prodiction data in Azure Data Lake Storage (ADLS) Gen2. This notebook shows how an Azure administrator can set up access to storage. See an overview of how to access other supported storage data sources [here](https://docs.microsoft.com/en-us/azure/databricks/data/data-sources/).
+# MAGIC This notebook shows how an Azure administrator can set up access to storage. Most parts of the demo will use the [Databricks File Storage (DBFS)](https://docs.microsoft.com/en-us/azure/databricks/data/databricks-file-system) for simplicity and will not require this setup. **We recommend to store prodiction data in Azure Data Lake Storage (ADLS) Gen2 and not use DBFS**. 
 # MAGIC 
-# MAGIC **Note that the notebook it will not run as is!**
+# MAGIC See an overview of how to access other supported storage data sources [here](https://docs.microsoft.com/en-us/azure/databricks/data/data-sources/).
+# MAGIC 
+# MAGIC **Note that the notebook is intended as an instruction and will not run.**
 
 # COMMAND ----------
 

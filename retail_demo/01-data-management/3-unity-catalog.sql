@@ -69,7 +69,7 @@ COMMENT "Azure Databricks Essentials demo schema";
 CREATE TABLE IF NOT EXISTS adb_essentials_catalog.adb_essentials_schema.adb_essentials_table
   (columnA Int, columnB String) PARTITIONED BY (columnA);
 
-INSERT INTO TABLE adb_essentials_table
+INSERT INTO TABLE adb_essentials_catalog.adb_essentials_schema.adb_essentials_table
 VALUES
   (1, "one"),
   (2, "two");
@@ -237,4 +237,4 @@ SELECT * FROM adb_essentials_view;
 -- COMMAND ----------
 
 -- Drop a schema (uncomment the following line)
--- DROP SCHEMA adb_essentials_schema CASCADE
+-- DROP SCHEMA IF EXISTS adb_essentials_schema CASCADE
