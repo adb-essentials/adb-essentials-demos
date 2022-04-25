@@ -2,7 +2,7 @@
 -- MAGIC %md
 -- MAGIC # Unity Catalog Quickstart
 -- MAGIC 
--- MAGIC [Unity Catalog](https://docs.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/) is a fine-grained governance solution for data and AI on the Lakehouse. It helps simplify security and governance of your data by offering a single place to administer data access policies that apply across all workspaces and personas. The security model is based on standard ANSI SQL, and allows administrators to grant permissions at the level of catalogs, databases (also called schemas), tables, and views in their existing data lake using familiar syntax. Unity Catalog furthermore captures user-level audit logs that record access to your data.
+-- MAGIC [Unity Catalog](https://docs.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/) is a fine-grained governance solution for data and AI on the Lakehouse. It helps simplify security and governance of your data by offering a single place to administer data access policies that apply across all workspaces and personas. The security model is based on standard ANSI SQL, and allows administrators to grant permissions at the level of catalogs, databases (also called schemas), tables, and views in their existing data lake using familiar syntax. Unity Catalog furthermore captures user-level audit logs that record access to your data. See more on data governance in [this overview](https://docs.microsoft.com/en-us/azure/databricks/security/data-governance).
 -- MAGIC 
 -- MAGIC This notebook provides an example workflow for getting started with Unity Catalog by showing how to do the following:
 -- MAGIC 
