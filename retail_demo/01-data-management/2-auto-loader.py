@@ -47,9 +47,7 @@ df = spark.readStream.format('cloudFiles') \
   .schema('city string, year int, population long') \
   .load(upload_path)
 
-# Start the stream.
-# Use the checkpoint_path location to keep a record of all files that have already been uploaded to the upload_path location.
-# For those that have been uploaded since the last check, write the newly-uploaded files' data to the write_path location.
+# Start the stream. The checkpoint_path location is used to keep a record of all uploaded files.
 df.writeStream.format('delta') \
   .option('checkpointLocation', checkpoint_path) \
   .start(write_path)
@@ -105,13 +103,16 @@ display(df_population)
 
 # MAGIC %md
 # MAGIC ## Clean up
+# MAGIC 
+# MAGIC Delete the directories and files created before re-running the notebook.
 
 # COMMAND ----------
 
-dbutils.fs.rm(write_path, True)
-dbutils.fs.rm(upload_path, True)
+# Uncomment before running
+# dbutils.fs.rm(write_path, True)
+# dbutils.fs.rm(upload_path, True)
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC DROP TABLE default.population;
+# MAGIC -- DROP TABLE IF EXISTS default.population;

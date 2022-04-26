@@ -4,6 +4,8 @@
 # MAGIC 
 # MAGIC This notebook show how to read and data with Databricks and write it into the Delta format.
 # MAGIC 
+# MAGIC We will mostly use Python and SQL in this demo. It is possible to switch between languages (Python, R, Scala, SQL), filesystem commands or markdown language using magic commands (*%\<command\>*) at the beginning of a cell.
+# MAGIC 
 # MAGIC *Created with Databricks runtime 10.4 LTS.*
 
 # COMMAND ----------
@@ -11,12 +13,12 @@
 # MAGIC %md
 # MAGIC ## Read data
 # MAGIC 
-# MAGIC Load CSV file from bike sharing [sample dataset](https://docs.microsoft.com/en-us/azure/databricks/data/databricks-datasets). See the [data guide](https://docs.microsoft.com/en-us/azure/databricks/data/) for other options to import data and how to use different languages (Python, R, Scala, SQL).
+# MAGIC Load CSV file from bike sharing [sample dataset](https://docs.microsoft.com/en-us/azure/databricks/data/databricks-datasets).
 
 # COMMAND ----------
 
 # MAGIC %fs
-# MAGIC ls dbfs:/databricks-datasets/bikeSharing/data-001
+# MAGIC ls /databricks-datasets/bikeSharing/data-001
 
 # COMMAND ----------
 
@@ -26,8 +28,15 @@
 # COMMAND ----------
 
 # Load to Spark dataframe
-sparkDF = spark.read.format('csv').options(header='true', inferSchema='true').load('dbfs:/databricks-datasets/bikeSharing/data-001/day.csv')
+path = '/databricks-datasets/bikeSharing/data-001/'
+
+sparkDF = spark.read.format('csv').options(header='true', inferSchema='true').load(path+'day.csv')
 display(sparkDF)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC You can **plot** Spark dataframes in the notebook output or see **table statistics** in the Data Profile.
 
 # COMMAND ----------
 
@@ -37,9 +46,10 @@ display(sparkDF)
 # COMMAND ----------
 
 # Load to Pandas dataframe
+# Note that we have to add '/dbfs' to the path when reading from DBFS with Python
 import pandas as pd
 
-pandasDF = pd.read_csv("/dbfs/databricks-datasets/bikeSharing/data-001/day.csv")
+pandasDF = pd.read_csv('/dbfs'+path+'day.csv')
 pandasDF
 
 # COMMAND ----------
@@ -54,7 +64,7 @@ pandasDF
 # Load to pandas-on-Spark dataframe (requires DBR 10.0 or above)
 import pyspark.pandas as ps
 
-spark_pandasDF = ps.read_csv("dbfs:/databricks-datasets/bikeSharing/data-001/day.csv")
+spark_pandasDF = ps.read_csv(path+'day.csv')
 display(spark_pandasDF)
 
 # COMMAND ----------
@@ -66,18 +76,6 @@ display(spark_pandasDF)
 
 # MAGIC %md
 # MAGIC Saving data as a [table](https://docs.microsoft.com/en-us/azure/databricks/data/tables) will make it discoverable for other users in the data menu to the left, where they are grouped within databases. Table metadata will be stored in a metastore and point to the underlying files, which and abstracts away the storace location when working with data. Creating a table will also allow to query the data using SQL. Here we will save tables in the [Delta format](https://docs.microsoft.com/en-us/azure/databricks/delta/).
-# MAGIC 
-# MAGIC There are two types of tables in Databricks, managed and unmanaged. 
-# MAGIC 
-# MAGIC **Managed tables** <br>
-# MAGIC A managed table is a table for which Databricks manages both the data and the metadata. Deleting a table using the *DROP TABLE* command deletes both the metadata and data. The default location of managed data is either
-# MAGIC - In the [Databricks File Storage (DBFS)](https://docs.microsoft.com/en-us/azure/databricks/data/databricks-file-system) connected to the workspace, 
-# MAGIC - Or in a managed cloud storage location when using [Unity Catalog](https://docs.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/), which is specified when setting au a catalog.
-# MAGIC 
-# MAGIC **Note:** DBFS is not intended for production data. We recommend saving data in your own object storage, such as Azure Data Lake Storage Gen2 (ADLS2).
-# MAGIC 
-# MAGIC **Unmanaged tables** <br>
-# MAGIC Another option is to let Databricks manage the metadata, while you control the data location. We refer to this as an unmanaged table. Databricks manages the relevant metadata, so when using *DROP TABLE*, only the metadata is removed and the table is no longer visible in the workspace. The data is still present in the path you provided.
 
 # COMMAND ----------
 
@@ -93,16 +91,10 @@ display(spark_pandasDF)
 # COMMAND ----------
 
 # Load raw data into Spark dataframe
-bike_sharing_day = spark.read.format('csv').options(header='true', inferSchema='true').load('dbfs:/databricks-datasets/bikeSharing/data-001/day.csv')
+bike_sharing_day = spark.read.format('csv').options(header='true', inferSchema='true').load(path+'day.csv')
 
 # Save the Spark dataframe we created earlier as a managed table
 bike_sharing_day.write.saveAsTable("bike_sharing.day")
-
-# COMMAND ----------
-
-# Load table into new dataframe
-sparkDF2 = spark.table('bike_sharing.day').select('yr', 'mnth', 'weekday', 'cnt')
-display(sparkDF2)
 
 # COMMAND ----------
 
@@ -113,29 +105,44 @@ display(sparkDF2)
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC Tables in Databricks can be [managed or unmanaged](https://docs.microsoft.com/en-us/azure/databricks/data/tables#--managed-and-unmanaged-tables). 
+# MAGIC 
+# MAGIC **Managed tables** <br>
+# MAGIC A managed table is a table for which Databricks manages both the data and the metadata. Deleting a table using the *DROP TABLE* command deletes both the metadata and data. The default location of managed data is either
+# MAGIC - In the Databricks File Storage (DBFS) connected to the workspace, 
+# MAGIC - Or in a managed cloud storage location when using [Unity Catalog](https://docs.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/), which is specified when setting au a catalog.
+# MAGIC 
+# MAGIC **Unmanaged tables** <br>
+# MAGIC Another option is to let Databricks manage the metadata, while you control the data location. We refer to this as an unmanaged table. Databricks manages the relevant metadata, so when using *DROP TABLE*, only the metadata is removed and the table is no longer visible in the workspace. The data is still present in the path you provided.
+# MAGIC 
+# MAGIC **Note:** DBFS is not intended for production data, we recommend saving data in your own object storage, such as Azure Data Lake Storage Gen2 (ADLS2). Unmanaged tables with the data stored in cloud storage are therefore recommended for classical workspaces. With Unity Catalog the standard are managed tables, which store the data in a specified cloud storage location.
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ### Unmanaged tables
 # MAGIC 
 # MAGIC The underlying data for unmanaged tables are typically saved in external storage locations. 
 # MAGIC 
-# MAGIC **The code below will only work if you set up a connection to an external storage location** (see notebook "0-setup").
+# MAGIC **The code below will only work if you set up a connection to an external storage location!** See notebook "0-setup".
 
 # COMMAND ----------
 
 # Load raw data into Spark dataframe
-bike_sharing_hour = spark.read.format('csv').options(header='true', inferSchema='true').load('dbfs:/databricks-datasets/bikeSharing/data-001/hour.csv')
+bike_sharing_hour = spark.read.format('csv').options(header='true', inferSchema='true').load(path+'hour.csv')
 
 # COMMAND ----------
 
 # Save as unmanaged Delta table
 # Insert your storage location below: 'abfss://<container-name>@<storage-account-name>.dfs.core.windows.net/<directory-name>'
-path = 'abfss://adb-essentials@thorstenstorage.dfs.core.windows.net/bike_sharing' 
+adls_path = 'abfss://adb-essentials@thorstenstorage.dfs.core.windows.net/bike_sharing' 
 table_name = 'bike_sharing.hour'
 
 # Write data to external location
-bike_sharing_hour.write.format('delta').save(path)
+bike_sharing_hour.write.format('delta').save(adls_path)
 
 # Link table in the metastore
-spark.sql(f"CREATE TABLE {table_name} USING DELTA LOCATION '{save_path}'")
+spark.sql(f"CREATE TABLE {table_name} USING DELTA LOCATION '{adls_path}'")
 
 # COMMAND ----------
 
@@ -153,10 +160,11 @@ spark.sql(f"CREATE TABLE {table_name} USING DELTA LOCATION '{save_path}'")
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC DROP TABLE IF EXISTS bike_sharing.day;
-# MAGIC DROP TABLE IF EXISTS bike_sharing.hour;
-# MAGIC DROP DATABASE IF EXISTS bike_sharing;
+# MAGIC -- Uncomment before running
+# MAGIC -- DROP TABLE IF EXISTS bike_sharing.day;
+# MAGIC -- DROP TABLE IF EXISTS bike_sharing.hour;
+# MAGIC -- DROP DATABASE IF EXISTS bike_sharing;
 
 # COMMAND ----------
 
-dbutils.fs.rm('abfss://adb-essentials@thorstenstorage.dfs.core.windows.net/bike_sharing', recurse=True)
+# dbutils.fs.rm(adls_path, recurse=True)
