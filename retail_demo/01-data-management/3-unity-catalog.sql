@@ -201,16 +201,16 @@ ON TABLE adb_essentials_table;
 
 -- COMMAND ----------
 
+-- REVOKE SELECT
+-- ON TABLE adb_essentials_table
+-- FROM `account users`;
+
+-- COMMAND ----------
+
 -- MAGIC %md
 -- MAGIC ### Fine-grained permissions
 -- MAGIC 
 -- MAGIC You can use dynamic views to configure fine-grained access control, including columns or row level security and data masking.
-
--- COMMAND ----------
-
--- REVOKE SELECT
--- ON TABLE adb_essentials_table
--- FROM `account users`;
 
 -- COMMAND ----------
 

@@ -76,18 +76,6 @@ display(spark_pandasDF)
 
 # MAGIC %md
 # MAGIC Saving data as a [table](https://docs.microsoft.com/en-us/azure/databricks/data/tables) will make it discoverable for other users in the data menu to the left, where they are grouped within databases. Table metadata will be stored in a metastore and point to the underlying files, which and abstracts away the storace location when working with data. Creating a table will also allow to query the data using SQL. Here we will save tables in the [Delta format](https://docs.microsoft.com/en-us/azure/databricks/delta/).
-# MAGIC 
-# MAGIC There are two types of tables in Databricks, managed and unmanaged. 
-# MAGIC 
-# MAGIC **Managed tables** <br>
-# MAGIC A managed table is a table for which Databricks manages both the data and the metadata. Deleting a table using the *DROP TABLE* command deletes both the metadata and data. The default location of managed data is either
-# MAGIC - In the Databricks File Storage (DBFS) connected to the workspace, 
-# MAGIC - Or in a managed cloud storage location when using [Unity Catalog](https://docs.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/), which is specified when setting au a catalog.
-# MAGIC 
-# MAGIC **Note:** DBFS is not intended for production data. We recommend saving data in your own object storage, such as Azure Data Lake Storage Gen2 (ADLS2).
-# MAGIC 
-# MAGIC **Unmanaged tables** <br>
-# MAGIC Another option is to let Databricks manage the metadata, while you control the data location. We refer to this as an unmanaged table. Databricks manages the relevant metadata, so when using *DROP TABLE*, only the metadata is removed and the table is no longer visible in the workspace. The data is still present in the path you provided.
 
 # COMMAND ----------
 
@@ -110,15 +98,24 @@ bike_sharing_day.write.saveAsTable("bike_sharing.day")
 
 # COMMAND ----------
 
-# Load table into new dataframe
-sparkDF2 = spark.table('bike_sharing.day').select('yr', 'mnth', 'weekday', 'cnt')
-display(sparkDF2)
-
-# COMMAND ----------
-
 # MAGIC %sql
 # MAGIC -- It is now possible to query the table with SQL
 # MAGIC select * from bike_sharing.day
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Tables in Databricks can be [managed or unmanaged](https://docs.microsoft.com/en-us/azure/databricks/data/tables#--managed-and-unmanaged-tables). 
+# MAGIC 
+# MAGIC **Managed tables** <br>
+# MAGIC A managed table is a table for which Databricks manages both the data and the metadata. Deleting a table using the *DROP TABLE* command deletes both the metadata and data. The default location of managed data is either
+# MAGIC - In the Databricks File Storage (DBFS) connected to the workspace, 
+# MAGIC - Or in a managed cloud storage location when using [Unity Catalog](https://docs.microsoft.com/en-us/azure/databricks/data-governance/unity-catalog/), which is specified when setting au a catalog.
+# MAGIC 
+# MAGIC **Unmanaged tables** <br>
+# MAGIC Another option is to let Databricks manage the metadata, while you control the data location. We refer to this as an unmanaged table. Databricks manages the relevant metadata, so when using *DROP TABLE*, only the metadata is removed and the table is no longer visible in the workspace. The data is still present in the path you provided.
+# MAGIC 
+# MAGIC **Note:** DBFS is not intended for production data, we recommend saving data in your own object storage, such as Azure Data Lake Storage Gen2 (ADLS2). Unmanaged tables with the data stored in cloud storage are therefore recommended for classical workspaces. With Unity Catalog the standard are managed tables, which store the data in a specified cloud storage location.
 
 # COMMAND ----------
 
