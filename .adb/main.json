@@ -5,102 +5,119 @@
     "_generator": {
       "name": "bicep",
       "version": "0.5.6.12127",
-      "templateHash": "12150364426957567854"
+      "templateHash": "2234606122472978887"
     }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the resources"
+      }
+    },
+    "disablePublicIp": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Specifies whether to deploy Azure Databricks workspace with Secure Cluster Connectivity (No Public IP) enabled or not"
+      }
+    },
+    "workspaceName": {
+      "type": "string",
+      "defaultValue": "adb-essentials-ws",
+      "metadata": {
+        "description": "The name of the Azure Databricks workspace to create."
+      }
+    },
+    "pricingTier": {
+      "type": "string",
+      "defaultValue": "premium",
+      "allowedValues": [
+        "standard",
+        "premium"
+      ],
+      "metadata": {
+        "description": "The pricing tier of workspace."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "adb-essentials-sa",
+      "metadata": {
+        "description": "Specifies the name of the Azure Storage account."
+      }
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "adb-demos",
+      "metadata": {
+        "description": "Specifies the name of the blob container."
+      }
+    }
+  },
+  "variables": {
+    "managedResourceGroupName": "[format('databricks-rg-{0}-{1}', parameters('workspaceName'), uniqueString(parameters('workspaceName'), resourceGroup().id))]"
   },
   "resources": [
     {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-06-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Cool"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2021-06-01",
+      "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
       "type": "Microsoft.Databricks/workspaces",
       "apiVersion": "2021-04-01-preview",
-      "name": "string",
-      "location": "string",
+      "name": "[parameters('workspaceName')]",
+      "location": "[parameters('location')]",
       "tags": {
-        "tagName1": "tagValue1",
-        "tagName2": "tagValue2"
+        "usage": "adb-essentials-demo"
       },
       "sku": {
-        "name": "string",
-        "tier": "string"
+        "name": "[parameters('pricingTier')]"
       },
       "properties": {
-        "authorizations": [
-          {
-            "principalId": "string",
-            "roleDefinitionId": "string"
-          }
-        ],
-        "createdBy": {},
-        "encryption": {
-          "entities": {
-            "managedServices": {
-              "keySource": "Microsoft.Keyvault",
-              "keyVaultProperties": {
-                "keyName": "string",
-                "keyVaultUri": "string",
-                "keyVersion": "string"
-              }
-            }
-          }
-        },
-        "managedResourceGroupId": "string",
+        "managedResourceGroupId": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('managedResourceGroupName'))]",
         "parameters": {
-          "amlWorkspaceId": {
-            "value": "string"
-          },
-          "customPrivateSubnetName": {
-            "value": "string"
-          },
-          "customPublicSubnetName": {
-            "value": "string"
-          },
-          "customVirtualNetworkId": {
-            "value": "string"
-          },
           "enableNoPublicIp": {
-            "value": "bool"
-          },
-          "encryption": {
-            "value": {
-              "KeyName": "string",
-              "keySource": "string",
-              "keyvaulturi": "string",
-              "keyversion": "string"
-            }
-          },
-          "loadBalancerBackendPoolName": {
-            "value": "string"
-          },
-          "loadBalancerId": {
-            "value": "string"
-          },
-          "natGatewayName": {
-            "value": "string"
-          },
-          "prepareEncryption": {
-            "value": "bool"
-          },
-          "publicIpName": {
-            "value": "string"
-          },
-          "requireInfrastructureEncryption": {
-            "value": "bool"
-          },
-          "storageAccountName": {
-            "value": "string"
-          },
-          "storageAccountSkuName": {
-            "value": "string"
-          },
-          "vnetAddressPrefix": {
-            "value": "string"
+            "value": "[parameters('disablePublicIp')]"
           }
-        },
-        "publicNetworkAccess": "string",
-        "requiredNsgRules": "string",
-        "storageAccountIdentity": {},
-        "uiDefinitionUri": "string",
-        "updatedBy": {}
+        }
       }
     }
-  ]
+  ],
+  "outputs": {
+    "blobEndpoint": {
+      "type": "string",
+      "value": "[format('https://satestapppreprod.blob.{0}', environment().suffixes.storage)]"
+    },
+    "myContainerBlobEndpoint": {
+      "type": "string",
+      "value": "[format('https://satestapppreprod.blob.{0}/{1}', environment().suffixes.storage, parameters('containerName'))]"
+    },
+    "allBlobDownloadSAS": {
+      "type": "string",
+      "value": "[listAccountSAS(parameters('storageAccountName'), '2021-04-01', createObject('signedProtocol', 'https', 'signedResourceTypes', 'sco', 'signedPermission', 'rl', 'signedServices', 'b', 'signedExpiry', '2026-07-01T00:00:00Z')).accountSasToken]"
+    },
+    "myContainerUploadSAS": {
+      "type": "string",
+      "value": "[listServiceSAS(parameters('storageAccountName'), '2021-04-01', createObject('canonicalizedResource', format('/blob/{0}/{1}', parameters('storageAccountName'), parameters('containerName')), 'signedResource', 'c', 'signedProtocol', 'https', 'signedPermission', 'rwl', 'signedServices', 'b', 'signedExpiry', '2026-07-01T00:00:00Z')).serviceSasToken]"
+    }
+  }
 }
