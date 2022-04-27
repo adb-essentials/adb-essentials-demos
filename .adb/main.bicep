@@ -22,6 +22,13 @@ param containerName string = 'adb-demos'
 
 var managedResourceGroupName = 'databricks-rg-${workspaceName}-${uniqueString(workspaceName, resourceGroup().id)}'
 
+var identityName = 'adbEssentialsId'
+
+resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: identityName
+  location: location
+}
+
 resource sa 'Microsoft.Storage/storageAccounts@2021-06-01' = {
   name: storageAccountName
   location: location
@@ -78,14 +85,14 @@ var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
 var storageKey = sa.listKeys().keys[0].value
 
 
-resource secretScope 'Microsoft.Resources/deploymentScripts@2021-04-01' = {
+resource secretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: 'secretScope'
   location: location
   kind: 'AzureCLI'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${identity}': {}
+      '${mi.id}': {}
     }
   }
   properties: {
