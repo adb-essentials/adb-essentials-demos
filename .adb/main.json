@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.5.6.12127",
-      "templateHash": "9957442518468038955"
+      "templateHash": "5636207287468806633"
     }
   },
   "parameters": {
@@ -58,7 +58,7 @@
   },
   "variables": {
     "managedResourceGroupName": "[format('databricks-rg-{0}-{1}', parameters('workspaceName'), uniqueString(parameters('workspaceName'), resourceGroup().id))]",
-    "identityName": "adbEssentialsId",
+    "identityName": "adbessentialsid",
     "endpoint": "[format('https://{0}.blob.{1}', parameters('storageAccountName'), environment().suffixes.storage)]",
     "containerEndpoint": "[format('https://{0}.blob.{1}/{2}', parameters('storageAccountName'), environment().suffixes.storage, parameters('containerName'))]",
     "containerURL": "[format('wasbs://{0}@{1}.blob.core.windows.net/', parameters('containerName'), parameters('storageAccountName'))]"
@@ -114,6 +114,46 @@
     {
       "type": "Microsoft.Resources/deploymentScripts",
       "apiVersion": "2020-10-01",
+      "name": "createAdbPATToken",
+      "location": "[parameters('location')]",
+      "kind": "AzureCLI",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')))]": {}
+        }
+      },
+      "properties": {
+        "azCliVersion": "2.26.0",
+        "timeout": "PT5M",
+        "cleanupPreference": "OnExpiration",
+        "retentionInterval": "PT1H",
+        "environmentVariables": [
+          {
+            "name": "ADB_WORKSPACE_URL",
+            "value": "[reference(resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))).workspaceUrl]"
+          },
+          {
+            "name": "ADB_WORKSPACE_ID",
+            "value": "[resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))]"
+          },
+          {
+            "name": "PAT_LIFETIME",
+            "value": "3600"
+          }
+        ],
+        "scriptContent": "#/bin/bash -e\npat_token_config=$(jq -n -c \\\n    --arg ls \"$PAT_LIFETIME\" \\\n    --arg co \"Example Token\" \\\n    '{lifetime_seconds: ($ls|tonumber),\n     comment: $co}')\n\nadbGlobalToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output json | jq -r .accessToken)\nazureApiToken=$(az account get-access-token --resource https://management.core.windows.net/ --output json | jq -r .accessToken)\n\nauthHeader=\"Authorization: Bearer $adbGlobalToken\"\nadbSPMgmtToken=\"X-Databricks-Azure-SP-Management-Token:$azureApiToken\"\nadbResourceId=\"X-Databricks-Azure-Workspace-Resource-Id:$ADB_WORKSPACE_ID\"\njson=$(echo \"$pat_token_config\" | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/token/create\")\n\necho \"$json\" >\"$AZ_SCRIPTS_OUTPUT_PATH\""
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', split(format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName')), '/')[0], split(format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName')), '/')[1], split(format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName')), '/')[2])]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "[resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
       "name": "secretScope",
       "location": "[parameters('location')]",
       "kind": "AzureCLI",
@@ -153,7 +193,7 @@
         "scriptContent": "#/bin/bash -e\n\n# Create secret scope backed by ADB\nadb_secret_scope_payload=$(\n    jq -n -c \\\n        --arg sc \"$ADB_SECRET_SCOPE_NAME\" \\\n        '{\n        scope: $sc,\n        initial_manage_principal: \"users\"\n     }'\n)\n\n# Get PAT token for authentication with REST API\nadbGlobalToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output json | jq -r .accessToken)\nazureApiToken=$(az account get-access-token --resource https://management.core.windows.net/ --output json | jq -r .accessToken)\n\nauthHeader=\"Authorization: Bearer $adbGlobalToken\"\nadbSPMgmtToken=\"X-Databricks-Azure-SP-Management-Token:$azureApiToken\"\nadbResourceId=\"X-Databricks-Azure-Workspace-Resource-Id:$ADB_WORKSPACE_ID\"\n\necho \"Create ADB secret scope backed by Databricks key vault\"\njson=$(echo $adb_secret_scope_payload | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/secrets/scopes/create\")\n\nfunction createKey() {\n    local keyName=$1\n    local secretValue=$2\n    json_payload=$(\n        jq -n -c \\\n            --arg sc \"$ADB_SECRET_SCOPE_NAME\" \\\n            --arg k \"$keyName\" \\\n            --arg v \"$secretValue\" \\\n            '{\n            scope: $sc,\n            key: $k,\n            string_value: $v\n        }'\n    )\n    response=$(echo $json_payload | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/secrets/put\")\n    echo $response\n\n}\n\ncreateKey \"sasKey\" \"$SAS_ACCESS_KEY\"\ncreateKey \"storageKey\" \"$STORAGE_ACCESS_KEY\"\n\necho \"$json\" >\"$AZ_SCRIPTS_OUTPUT_PATH\"\n\n# tail -f /dev/null"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts/blobServices/containers', split(format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName')), '/')[0], split(format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName')), '/')[1], split(format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName')), '/')[2])]",
+        "[resourceId('Microsoft.Resources/deploymentScripts', 'createAdbPATToken')]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
         "[resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))]"
