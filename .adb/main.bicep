@@ -15,7 +15,7 @@ param workspaceName string = 'adb-essentials-ws'
 param pricingTier string = 'premium'
 
 @description('Specifies the name of the Azure Storage account.')
-param storageAccountName string = 'adb-essentials-sa'
+param storageAccountName string = 'adbessentialsstorage'
 
 @description('Specifies the name of the blob container.')
 param containerName string = 'adb-demos'
@@ -62,20 +62,14 @@ resource managedResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' ex
   name: managedResourceGroupName
 }
 
-output blobEndpoint string = 'https://satestapppreprod.blob.${environment().suffixes.storage}'
-output myContainerBlobEndpoint string = 'https://satestapppreprod.blob.${environment().suffixes.storage}/${containerName}'
+output blobEndpoint string = 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
 
-//SAS to download all blobs in account
-output allBlobDownloadSAS string = listAccountSAS(storageAccountName, '2021-04-01', {
-  signedProtocol: 'https'
-  signedResourceTypes: 'sco'
-  signedPermission: 'rl'
-  signedServices: 'b'
-  signedExpiry: '2026-07-01T00:00:00Z'
-}).accountSasToken
+output myContainerBlobEndpoint string = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/${containerName}'
 
-//SAS to upload blobs to just the mycontainer container.
-output myContainerUploadSAS string = listServiceSAS(storageAccountName,'2021-04-01', {
+output wasbsURL string = 'wasbs://${containerName}@${storageAccountName}.blob.core.windows.net/'
+
+//SAS to access (rw) just the adb-demo container.
+output containerSASConnectionStr string = listServiceSAS(storageAccountName,'2021-04-01', {
   canonicalizedResource: '/blob/${storageAccountName}/${containerName}'
   signedResource: 'c'
   signedProtocol: 'https'
@@ -83,3 +77,5 @@ output myContainerUploadSAS string = listServiceSAS(storageAccountName,'2021-04-
   signedServices: 'b'
   signedExpiry: '2026-07-01T00:00:00Z'
 }).serviceSasToken
+
+output blobAccountAccessKey string = sa.listKeys().keys[0].value
