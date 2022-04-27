@@ -115,6 +115,11 @@ resource createPATToken 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
     ]
     scriptContent: loadTextContent('./create_pat.sh')
   }
+  dependsOn: [
+    ws
+    container
+    sa
+  ]
 }
 
 resource secretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
@@ -157,9 +162,7 @@ resource secretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
     scriptContent: loadTextContent('./create_secret_scope.sh')
   }
   dependsOn: [
-    ws
-    container
-    sa
+    createPATToken
   ]
 }
 
