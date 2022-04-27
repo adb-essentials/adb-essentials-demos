@@ -62,14 +62,11 @@ resource managedResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' ex
   name: managedResourceGroupName
 }
 
-output blobEndpoint string = 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
-
-output myContainerBlobEndpoint string = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/${containerName}'
-
-output wasbsURL string = 'wasbs://${containerName}@${storageAccountName}.blob.core.windows.net/'
-
+var endpoint = 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
+var containerEndpoint = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/${containerName}'
+var containerURL = 'wasbs://${containerName}@${storageAccountName}.blob.core.windows.net/'
 //SAS to access (rw) just the adb-demo container.
-output containerSASConnectionStr string = listServiceSAS(storageAccountName,'2021-04-01', {
+var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
   canonicalizedResource: '/blob/${storageAccountName}/${containerName}'
   signedResource: 'c'
   signedProtocol: 'https'
@@ -78,4 +75,57 @@ output containerSASConnectionStr string = listServiceSAS(storageAccountName,'202
   signedExpiry: '2026-07-01T00:00:00Z'
 }).serviceSasToken
 
-output blobAccountAccessKey string = sa.listKeys().keys[0].value
+var storageKey = sa.listKeys().keys[0].value
+
+
+resource secretScope 'Microsoft.Resources/deploymentScripts@2021-04-01' = {
+  name: 'secretScope'
+  location: location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${identity}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.26.0'
+    timeout: 'PT1H'
+    cleanupPreference: 'OnExpiration'
+    retentionInterval: 'PT1H'
+    environmentVariables: [
+      {
+        name: 'ADB_WORKSPACE_URL'
+        value: ws.properties.workspaceUrl
+      }
+      {
+        name: 'ADB_WORKSPACE_ID'
+        value: ws.id
+      }
+      {
+        name: 'ADB_SECRET_SCOPE_NAME'
+        value: 'essentials_secret_scope'
+      }
+      {
+        name: 'SAS_ACCESS_KEY'
+        value: sasString
+      }
+      {
+        name: 'STORAGE_ACCESS_KEY'
+        value: storageKey
+      }
+    ]
+    scriptContent: loadTextContent('./create_secret_scope.sh')
+  }
+  dependsOn: [
+    ws
+    container
+    sa
+  ]
+}
+
+output blobEndpoint string = endpoint
+output myContainerBlobEndpoint string = containerEndpoint
+output wasbsURL string = containerURL
+output containerSASConnectionStr string = sasString
+output blobAccountAccessKey string = storageKey
