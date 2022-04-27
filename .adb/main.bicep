@@ -22,7 +22,7 @@ param containerName string = 'adb-demos'
 
 var managedResourceGroupName = 'databricks-rg-${workspaceName}-${uniqueString(workspaceName, resourceGroup().id)}'
 
-var identityName = 'adbEssentialsId'
+var identityName = 'adbessentialsid'
 
 resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: identityName
@@ -84,6 +84,38 @@ var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
 
 var storageKey = sa.listKeys().keys[0].value
 
+resource createPATToken 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+  name: 'createAdbPATToken'
+  location: location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${mi.id}': {}
+    }
+  }
+  properties: {
+    azCliVersion: '2.26.0'
+    timeout: 'PT5M'
+    cleanupPreference: 'OnExpiration'
+    retentionInterval: 'PT1H'
+    environmentVariables: [
+      {
+        name: 'ADB_WORKSPACE_URL'
+        value: ws.properties.workspaceUrl
+      }
+      {
+        name: 'ADB_WORKSPACE_ID'
+        value: ws.id
+      }
+      {
+        name: 'PAT_LIFETIME'
+        value: '3600'
+      }
+    ]
+    scriptContent: loadTextContent('./create_pat.sh')
+  }
+}
 
 resource secretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: 'secretScope'
