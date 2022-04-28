@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.5.6.12127",
-      "templateHash": "3309815917077420331"
+      "templateHash": "10297456456680084117"
     }
   },
   "parameters": {
@@ -144,7 +144,7 @@
             "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2021-06-01').keys[0].value]"
           }
         ],
-        "scriptContent": "      pip install databricks\n      $databricks_aad_token = az account get-access-token | jq .accessToken -r\n      $Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         \n      databricks configure --aad-token --host {0}\n      databricks secrets create-scope --scope {1}\n      databricks secrets put --scope access_creds --key sasKey --string-value {2}\n      databricks secrets put --scope access_creds --key storageKey --string-value {3}\n      $DeploymentScriptOutputs = @{}\n      $DeploymentScriptOutputs[\\'text\\'] = $output\n    ",
+        "scriptContent": "      pip install databricks\n      $databricks_aad_token = az account get-access-token | jq .accessToken -r\n      $Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         \n      databricks configure --aad-token --host \\${{Env:ADB_WORKSPACE_URL}\n      databricks secrets create-scope --scope \\${{Env:ADB_SECRET_SCOPE_NAME}\n      databricks secrets put --scope access_creds --key sasKey --string-value \\${{Env:SAS_ACCESS_KEY}\n      databricks secrets put --scope access_creds --key storageKey --string-value \\${{Env:STORAGE_ACCESS_KEY}\n      $DeploymentScriptOutputs = @{}\n      $DeploymentScriptOutputs[\\'text\\'] = $output\n    ",
         "supportingScriptUris": [],
         "timeout": "PT30M",
         "cleanupPreference": "OnSuccess",

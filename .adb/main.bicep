@@ -119,10 +119,10 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
       pip install databricks
       $databricks_aad_token = az account get-access-token | jq .accessToken -r
       $Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         
-      databricks configure --aad-token --host {0}
-      databricks secrets create-scope --scope {1}
-      databricks secrets put --scope access_creds --key sasKey --string-value {2}
-      databricks secrets put --scope access_creds --key storageKey --string-value {3}
+      databricks configure --aad-token --host \${{Env:ADB_WORKSPACE_URL}
+      databricks secrets create-scope --scope \${{Env:ADB_SECRET_SCOPE_NAME}
+      databricks secrets put --scope access_creds --key sasKey --string-value \${{Env:SAS_ACCESS_KEY}
+      databricks secrets put --scope access_creds --key storageKey --string-value \${{Env:STORAGE_ACCESS_KEY}
       $DeploymentScriptOutputs = @{}
       $DeploymentScriptOutputs[\'text\'] = $output
     '''
