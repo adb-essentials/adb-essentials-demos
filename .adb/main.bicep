@@ -91,7 +91,7 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '/subscriptions/01234567-89AB-CDEF-0123-456789ABCDEF/resourceGroups/myResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myID': {}
+      '${mi.id}': {}
     }
   }
   properties: {
