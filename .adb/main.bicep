@@ -116,6 +116,7 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
       }
     ]
     scriptContent: '''
+set PATH "%PATH%;C:\Python33\Scripts"
 pip install databricks
 $databricks_aad_token = az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq .accessToken -r
 $Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         
