@@ -84,67 +84,23 @@ var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
 
 var storageKey = sa.listKeys().keys[0].value
 
-resource createPATToken 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
-  name: 'createAdbPATToken'
+resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+  name: 'runPowerShellInline'
   location: location
-  kind: 'AzureCLI'
+  kind: 'AzurePowerShell'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${mi.id}': {}
+      '/subscriptions/01234567-89AB-CDEF-0123-456789ABCDEF/resourceGroups/myResourceGroup/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myID': {}
     }
   }
   properties: {
-    azCliVersion: '2.26.0'
-    timeout: 'PT5M'
-    cleanupPreference: 'OnExpiration'
-    retentionInterval: 'PT1H'
+    forceUpdateTag: '1'
+    azPowerShellVersion: '6.4' // or azCliVersion: '2.28.0'
     environmentVariables: [
       {
         name: 'ADB_WORKSPACE_URL'
         value: ws.properties.workspaceUrl
-      }
-      {
-        name: 'ADB_WORKSPACE_ID'
-        value: ws.id
-      }
-      {
-        name: 'PAT_LIFETIME'
-        value: '3600'
-      }
-    ]
-    scriptContent: loadTextContent('./create_pat.sh')
-  }
-  dependsOn: [
-    ws
-    container
-    sa
-  ]
-}
-
-resource secretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
-  name: 'secretScope'
-  location: location
-  kind: 'AzureCLI'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${mi.id}': {}
-    }
-  }
-  properties: {
-    azCliVersion: '2.26.0'
-    timeout: 'PT1H'
-    cleanupPreference: 'OnExpiration'
-    retentionInterval: 'PT1H'
-    environmentVariables: [
-      {
-        name: 'ADB_WORKSPACE_URL'
-        value: ws.properties.workspaceUrl
-      }
-      {
-        name: 'ADB_WORKSPACE_ID'
-        value: ws.id
       }
       {
         name: 'ADB_SECRET_SCOPE_NAME'
@@ -159,10 +115,25 @@ resource secretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
         value: storageKey
       }
     ]
-    scriptContent: loadTextContent('./create_secret_scope.sh')
+    scriptContent: '''
+      pip install databricks
+      $databricks_aad_token = az account get-access-token | jq .accessToken -r
+      $Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         
+      databricks configure --aad-token --host {0}
+      databricks secrets create-scope --scope {1}
+      databricks secrets put --scope access_creds --key sasKey --string-value {2}
+      databricks secrets put --scope access_creds --key storageKey --string-value {3}
+      $DeploymentScriptOutputs = @{}
+      $DeploymentScriptOutputs[\'text\'] = $output
+    '''
+    supportingScriptUris: []
+    timeout: 'PT30M'
+    cleanupPreference: 'OnSuccess'
+    retentionInterval: 'P1D'
   }
   dependsOn: [
-    createPATToken
+    ws
+    sa
   ]
 }
 
