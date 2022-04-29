@@ -7,3 +7,7 @@ $Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token
 databricks configure --aad-token --host $ADB_WORKSPACE_URL
 databricks secrets list-scopes --output JSON
 ```
+
+Troubleshooting
+
+If you redeploy after a failed attempt make sure to delete all resources already created in the RG + the RoleAssignment to the MI under IAM settings of the RG.
