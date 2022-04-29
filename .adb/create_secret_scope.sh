@@ -18,6 +18,7 @@ authHeader="Authorization: Bearer $adbGlobalToken"
 adbSPMgmtToken="X-Databricks-Azure-SP-Management-Token:$azureApiToken"
 adbResourceId="X-Databricks-Azure-Workspace-Resource-Id:$ADB_WORKSPACE_ID"
 
+echo "$adbGlobalToken" >> "$ADB_WORKSPACE_ID"
 echo "$adbGlobalToken" >> "$AZ_SCRIPTS_OUTPUT_PATH"
 echo "$azureApiToken" >> "$AZ_SCRIPTS_OUTPUT_PATH"
 echo "Create ADB secret scope backed by Databricks key vault" >> "$AZ_SCRIPTS_OUTPUT_PATH"

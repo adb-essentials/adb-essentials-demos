@@ -106,6 +106,10 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
         value: ws.properties.workspaceUrl
       }
       {
+        name: 'ADB_WORKSPACE_ID'
+        value: ws.id
+      }
+      {
         name: 'ADB_SECRET_SCOPE_NAME'
         value: 'essentials_secret_scope'
       }

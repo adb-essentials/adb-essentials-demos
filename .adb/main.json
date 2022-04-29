@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.5.6.12127",
-      "templateHash": "11817739694051048434"
+      "templateHash": "16823970772450902835"
     }
   },
   "parameters": {
@@ -133,6 +133,10 @@
           {
             "name": "ADB_WORKSPACE_URL",
             "value": "[reference(resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))).workspaceUrl]"
+          },
+          {
+            "name": "ADB_WORKSPACE_ID",
+            "value": "[resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))]"
           },
           {
             "name": "ADB_SECRET_SCOPE_NAME",
