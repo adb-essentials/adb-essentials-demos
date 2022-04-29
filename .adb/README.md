@@ -11,3 +11,9 @@ databricks secrets list-scopes --output JSON
 Troubleshooting
 
 If you redeploy after a failed attempt make sure to delete all resources already created in the RG + the RoleAssignment to the MI under IAM settings of the RG.
+
+
+Helpful resources:
+* https://github.com/lordlinus/databricks-all-in-one-bicep-template
+* https://cloudarchitected.com/2020/01/using-azure-ad-with-the-azure-databricks-api/
+* https://github.com/Azure/Hadoop-Migrations/tree/main/bicep/modules/create-databricks-with-load-balancer
