@@ -112,7 +112,7 @@ resource createSecretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = 
     forceUpdateTag: '1'
     azCliVersion: '2.28.0'
     timeout: 'PT1H'
-    cleanupPreference: 'OnExpiration'
+    cleanupPreference: 'OnSuccess'
     retentionInterval: 'PT1H'
     environmentVariables: [
       {

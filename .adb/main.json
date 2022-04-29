@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.5.6.12127",
-      "templateHash": "10689435906744585716"
+      "templateHash": "10042585897657605818"
     }
   },
   "parameters": {
@@ -142,7 +142,7 @@
         "forceUpdateTag": "1",
         "azCliVersion": "2.28.0",
         "timeout": "PT1H",
-        "cleanupPreference": "OnExpiration",
+        "cleanupPreference": "OnSuccess",
         "retentionInterval": "PT1H",
         "environmentVariables": [
           {
@@ -200,6 +200,14 @@
     "secretScopeName": {
       "type": "string",
       "value": "[variables('secretScopeName')]"
+    },
+    "sasKeyName": {
+      "type": "string",
+      "value": "sasKey"
+    },
+    "storageKeyName": {
+      "type": "string",
+      "value": "storageKey"
     }
   }
 }
