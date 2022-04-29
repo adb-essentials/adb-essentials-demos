@@ -96,7 +96,6 @@ var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
 
 var storageKey = sa.listKeys().keys[0].value
 
-
 resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: 'runPowerShellInline'
   location: location
