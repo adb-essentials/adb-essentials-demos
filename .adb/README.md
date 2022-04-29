@@ -1,4 +1,9 @@
-Resource folder.
+Check in PowerShell if secret scope was created:
 
-
-[![img](deploy-to-azure.svg)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fadb-essentials%2Fadb-essentials-demos%2Fdeployment%2F.adb%2Fmain.json)
+```
+pip install databricks
+$databricks_aad_token = az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq .accessToken -r
+$Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         
+databricks configure --aad-token --host $ADB_WORKSPACE_URL
+databricks secrets list-scopes --output JSON
+```
