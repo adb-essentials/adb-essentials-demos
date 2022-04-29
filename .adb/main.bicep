@@ -24,9 +24,21 @@ var managedResourceGroupName = 'databricks-rg-${workspaceName}-${uniqueString(wo
 
 var identityName = 'adbessentialsid'
 
+var ownerRoleDefId = '8e3af657-a8ff-443c-a75c-2fe8c4bcb635'
+
 resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: identityName
   location: location
+}
+
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-08-01-preview' = {
+  name:  guid(ownerRoleDefId,resourceGroup().id)
+  scope: resourceGroup()
+  properties: {
+    principalType: 'ServicePrincipal'
+    principalId: mi.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', ownerRoleDefId)
+  }
 }
 
 resource sa 'Microsoft.Storage/storageAccounts@2021-06-01' = {
@@ -84,6 +96,7 @@ var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
 
 var storageKey = sa.listKeys().keys[0].value
 
+
 resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: 'runPowerShellInline'
   location: location
@@ -127,6 +140,7 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
   dependsOn: [
     ws
     sa
+    roleAssignment
   ]
 }
 
