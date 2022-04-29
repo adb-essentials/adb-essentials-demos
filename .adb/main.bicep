@@ -151,3 +151,5 @@ output wasbsURL string = containerURL
 output containerSASConnectionStr string = sasString
 output blobAccountAccessKey string = storageKey
 output secretScopeName string = secretScopeName
+output sasKeyName string = 'sasKey'
+output storageKeyName string = 'storageKey'
