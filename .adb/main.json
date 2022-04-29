@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.5.6.12127",
-      "templateHash": "9757716447428663995"
+      "templateHash": "10450678380467608769"
     }
   },
   "parameters": {
@@ -116,7 +116,7 @@
       "apiVersion": "2020-10-01",
       "name": "runPowerShellInline",
       "location": "[parameters('location')]",
-      "kind": "AzurePowerShell",
+      "kind": "AzureCLI",
       "identity": {
         "type": "UserAssigned",
         "userAssignedIdentities": {
@@ -125,7 +125,10 @@
       },
       "properties": {
         "forceUpdateTag": "1",
-        "azPowerShellVersion": "6.4",
+        "azCliVersion": "2.28.0",
+        "timeout": "PT1H",
+        "cleanupPreference": "OnExpiration",
+        "retentionInterval": "PT1H",
         "environmentVariables": [
           {
             "name": "ADB_WORKSPACE_URL",
@@ -144,11 +147,7 @@
             "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2021-06-01').keys[0].value]"
           }
         ],
-        "scriptContent": "set PATH \"%PATH%;C:\\Python33\\Scripts\"\npip install databricks\n$databricks_aad_token = az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq .accessToken -r\n$Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         \ndatabricks configure --aad-token --host ${Env:ADB_WORKSPACE_URL}\ndatabricks secrets create-scope --scope ${Env:ADB_SECRET_SCOPE_NAME}\ndatabricks secrets put --scope access_creds --key sasKey --string-value ${Env:SAS_ACCESS_KEY}\ndatabricks secrets put --scope access_creds --key storageKey --string-value ${Env:STORAGE_ACCESS_KEY}\n    ",
-        "supportingScriptUris": [],
-        "timeout": "PT30M",
-        "cleanupPreference": "OnSuccess",
-        "retentionInterval": "P1D"
+        "scriptContent": "#/bin/bash -e\n\n# Create secret scope backed by ADB\nadb_secret_scope_payload=$(\n    jq -n -c \\\n        --arg sc \"$ADB_SECRET_SCOPE_NAME\" \\\n        '{\n        scope: $sc,\n        initial_manage_principal: \"users\"\n     }'\n)\n\n# Get PAT token for authentication with REST API\nadbGlobalToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output json | jq -r .accessToken)\nazureApiToken=$(az account get-access-token --resource https://management.core.windows.net/ --output json | jq -r .accessToken)\n\nauthHeader=\"Authorization: Bearer $adbGlobalToken\"\nadbSPMgmtToken=\"X-Databricks-Azure-SP-Management-Token:$azureApiToken\"\nadbResourceId=\"X-Databricks-Azure-Workspace-Resource-Id:$ADB_WORKSPACE_ID\"\n\necho \"Create ADB secret scope backed by Databricks key vault\"\njson=$(echo $adb_secret_scope_payload | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/secrets/scopes/create\")\n\nfunction createKey() {\n    local keyName=$1\n    local secretValue=$2\n    json_payload=$(\n        jq -n -c \\\n            --arg sc \"$ADB_SECRET_SCOPE_NAME\" \\\n            --arg k \"$keyName\" \\\n            --arg v \"$secretValue\" \\\n            '{\n            scope: $sc,\n            key: $k,\n            string_value: $v\n        }'\n    )\n    response=$(echo $json_payload | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/secrets/put\")\n    echo $response\n\n}\n\ncreateKey \"sasKey\" \"$SAS_ACCESS_KEY\"\ncreateKey \"storageKey\" \"$STORAGE_ACCESS_KEY\"\n\necho \"$json\" >\"$AZ_SCRIPTS_OUTPUT_PATH\"\n\n# tail -f /dev/null"
       },
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",

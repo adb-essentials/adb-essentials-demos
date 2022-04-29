@@ -87,7 +87,7 @@ var storageKey = sa.listKeys().keys[0].value
 resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: 'runPowerShellInline'
   location: location
-  kind: 'AzurePowerShell'
+  kind: 'AzureCLI'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -96,7 +96,10 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
   }
   properties: {
     forceUpdateTag: '1'
-    azPowerShellVersion: '6.4' // or azCliVersion: '2.28.0'
+    azCliVersion: '2.28.0'
+    timeout: 'PT1H'
+    cleanupPreference: 'OnExpiration'
+    retentionInterval: 'PT1H'
     environmentVariables: [
       {
         name: 'ADB_WORKSPACE_URL'
@@ -115,20 +118,7 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
         value: storageKey
       }
     ]
-    scriptContent: '''
-set PATH "%PATH%;C:\Python33\Scripts"
-pip install databricks
-$databricks_aad_token = az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq .accessToken -r
-$Env:DATABRICKS_AAD_TOKEN = $databricks_aad_token         
-databricks configure --aad-token --host ${Env:ADB_WORKSPACE_URL}
-databricks secrets create-scope --scope ${Env:ADB_SECRET_SCOPE_NAME}
-databricks secrets put --scope access_creds --key sasKey --string-value ${Env:SAS_ACCESS_KEY}
-databricks secrets put --scope access_creds --key storageKey --string-value ${Env:STORAGE_ACCESS_KEY}
-    '''
-    supportingScriptUris: []
-    timeout: 'PT30M'
-    cleanupPreference: 'OnSuccess'
-    retentionInterval: 'P1D'
+    scriptContent: loadTextContent('./create_secret_scope.sh')
   }
   dependsOn: [
     ws
