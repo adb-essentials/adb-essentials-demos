@@ -26,6 +26,8 @@ var identityName = 'adbessentialsid'
 
 var ownerRoleDefId = '8e3af657-a8ff-443c-a75c-2fe8c4bcb635'
 
+var secretScopeName = 'essentials_secret_scope'
+
 resource mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: identityName
   location: location
@@ -96,8 +98,8 @@ var sasString = listServiceSAS(storageAccountName,'2021-04-01', {
 
 var storageKey = sa.listKeys().keys[0].value
 
-resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
-  name: 'runPowerShellInline'
+resource createSecretScope 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+  name: secretScopeName
   location: location
   kind: 'AzureCLI'
   identity: {
@@ -123,7 +125,7 @@ resource runPowerShellInline 'Microsoft.Resources/deploymentScripts@2020-10-01' 
       }
       {
         name: 'ADB_SECRET_SCOPE_NAME'
-        value: 'essentials_secret_scope'
+        value: secretScopeName
       }
       {
         name: 'SAS_ACCESS_KEY'
@@ -148,3 +150,4 @@ output myContainerBlobEndpoint string = containerEndpoint
 output wasbsURL string = containerURL
 output containerSASConnectionStr string = sasString
 output blobAccountAccessKey string = storageKey
+output secretScopeName string = secretScopeName
