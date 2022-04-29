@@ -1,0 +1,213 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.5.6.12127",
+      "templateHash": "10042585897657605818"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the resources"
+      }
+    },
+    "disablePublicIp": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Specifies whether to deploy Azure Databricks workspace with Secure Cluster Connectivity (No Public IP) enabled or not"
+      }
+    },
+    "workspaceName": {
+      "type": "string",
+      "defaultValue": "adb-essentials-ws",
+      "metadata": {
+        "description": "The name of the Azure Databricks workspace to create."
+      }
+    },
+    "pricingTier": {
+      "type": "string",
+      "defaultValue": "premium",
+      "allowedValues": [
+        "standard",
+        "premium"
+      ],
+      "metadata": {
+        "description": "The pricing tier of workspace."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "adbessentialsstorage",
+      "metadata": {
+        "description": "Specifies the name of the Azure Storage account."
+      }
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "adb-demos",
+      "metadata": {
+        "description": "Specifies the name of the blob container."
+      }
+    }
+  },
+  "variables": {
+    "managedResourceGroupName": "[format('databricks-rg-{0}-{1}', parameters('workspaceName'), uniqueString(parameters('workspaceName'), resourceGroup().id))]",
+    "identityName": "adbessentialsid",
+    "ownerRoleDefId": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
+    "secretScopeName": "essentials_secret_scope",
+    "endpoint": "[format('https://{0}.blob.{1}', parameters('storageAccountName'), environment().suffixes.storage)]",
+    "containerEndpoint": "[format('https://{0}.blob.{1}/{2}', parameters('storageAccountName'), environment().suffixes.storage, parameters('containerName'))]",
+    "containerURL": "[format('wasbs://{0}@{1}.blob.core.windows.net/', parameters('containerName'), parameters('storageAccountName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "[variables('identityName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-08-01-preview",
+      "name": "[guid(variables('ownerRoleDefId'), resourceGroup().id)]",
+      "properties": {
+        "principalType": "ServicePrincipal",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))).principalId]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('ownerRoleDefId'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-06-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Cool"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2021-06-01",
+      "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Databricks/workspaces",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[parameters('workspaceName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "usage": "adb-essentials-demo"
+      },
+      "sku": {
+        "name": "[parameters('pricingTier')]"
+      },
+      "properties": {
+        "managedResourceGroupId": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('managedResourceGroupName'))]",
+        "parameters": {
+          "enableNoPublicIp": {
+            "value": "[parameters('disablePublicIp')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deploymentScripts",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('secretScopeName')]",
+      "location": "[parameters('location')]",
+      "kind": "AzureCLI",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')))]": {}
+        }
+      },
+      "properties": {
+        "forceUpdateTag": "1",
+        "azCliVersion": "2.28.0",
+        "timeout": "PT1H",
+        "cleanupPreference": "OnSuccess",
+        "retentionInterval": "PT1H",
+        "environmentVariables": [
+          {
+            "name": "ADB_WORKSPACE_URL",
+            "value": "[reference(resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))).workspaceUrl]"
+          },
+          {
+            "name": "ADB_WORKSPACE_ID",
+            "value": "[resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))]"
+          },
+          {
+            "name": "ADB_SECRET_SCOPE_NAME",
+            "value": "[variables('secretScopeName')]"
+          },
+          {
+            "name": "SAS_ACCESS_KEY",
+            "value": "[listServiceSAS(parameters('storageAccountName'), '2021-04-01', createObject('canonicalizedResource', format('/blob/{0}/{1}', parameters('storageAccountName'), parameters('containerName')), 'signedResource', 'c', 'signedProtocol', 'https', 'signedPermission', 'rwl', 'signedServices', 'b', 'signedExpiry', '2026-07-01T00:00:00Z')).serviceSasToken]"
+          },
+          {
+            "name": "STORAGE_ACCESS_KEY",
+            "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2021-06-01').keys[0].value]"
+          }
+        ],
+        "scriptContent": "#/bin/bash -e\n\n# Create secret scope backed by ADB\nadb_secret_scope_payload=$(\n    jq -n -c \\\n        --arg sc \"$ADB_SECRET_SCOPE_NAME\" \\\n        '{\n        scope: $sc,\n        initial_manage_principal: \"users\"\n     }'\n)\n\n# Get PAT token for authentication with REST API\nadbGlobalToken=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --output json | jq -r .accessToken)\nazureApiToken=$(az account get-access-token --resource https://management.core.windows.net/ --output json | jq -r .accessToken)\n\nauthHeader=\"Authorization: Bearer $adbGlobalToken\"\nadbSPMgmtToken=\"X-Databricks-Azure-SP-Management-Token:$azureApiToken\"\nadbResourceId=\"X-Databricks-Azure-Workspace-Resource-Id:$ADB_WORKSPACE_ID\"\n\necho \"Create ADB secret scope backed by Databricks key vault\"\njson=$(echo $adb_secret_scope_payload | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/secrets/scopes/create\")\n\nfunction createKey() {\n    local keyName=$1\n    local secretValue=$2\n    json_payload=$(\n        jq -n -c \\\n            --arg sc \"$ADB_SECRET_SCOPE_NAME\" \\\n            --arg k \"$keyName\" \\\n            --arg v \"$secretValue\" \\\n            '{\n            scope: $sc,\n            key: $k,\n            string_value: $v\n        }'\n    )\n    response=$(echo $json_payload | curl -sS -X POST -H \"$authHeader\" -H \"$adbSPMgmtToken\" -H \"$adbResourceId\" --data-binary \"@-\" \"https://${ADB_WORKSPACE_URL}/api/2.0/secrets/put\")\n    echo $response\n\n}\n\ncreateKey \"sasKey\" \"$SAS_ACCESS_KEY\"\ncreateKey \"storageKey\" \"$STORAGE_ACCESS_KEY\"\n\necho \"$json\" >> \"$AZ_SCRIPTS_OUTPUT_PATH\"\n\n# tail -f /dev/null"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]",
+        "[resourceId('Microsoft.Authorization/roleAssignments', guid(variables('ownerRoleDefId'), resourceGroup().id))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+        "[resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "blobEndpoint": {
+      "type": "string",
+      "value": "[variables('endpoint')]"
+    },
+    "myContainerBlobEndpoint": {
+      "type": "string",
+      "value": "[variables('containerEndpoint')]"
+    },
+    "wasbsURL": {
+      "type": "string",
+      "value": "[variables('containerURL')]"
+    },
+    "containerSASConnectionStr": {
+      "type": "string",
+      "value": "[listServiceSAS(parameters('storageAccountName'), '2021-04-01', createObject('canonicalizedResource', format('/blob/{0}/{1}', parameters('storageAccountName'), parameters('containerName')), 'signedResource', 'c', 'signedProtocol', 'https', 'signedPermission', 'rwl', 'signedServices', 'b', 'signedExpiry', '2026-07-01T00:00:00Z')).serviceSasToken]"
+    },
+    "blobAccountAccessKey": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2021-06-01').keys[0].value]"
+    },
+    "secretScopeName": {
+      "type": "string",
+      "value": "[variables('secretScopeName')]"
+    },
+    "sasKeyName": {
+      "type": "string",
+      "value": "sasKey"
+    },
+    "storageKeyName": {
+      "type": "string",
+      "value": "storageKey"
+    }
+  }
+}
