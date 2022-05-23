@@ -5,7 +5,11 @@ Demos showcased in the [Azure Databricks Essentials webinar](https://databricks.
 * `retail_demo` - used in **current (2022)** webinars
 * `loans_demo` - used in webinars between **08/2021-03/2022**
 
-[![deploy_azure_lakehouse](.adb/deploy-to-lakehouse.svg)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fadb-essentials%2Fadb-essentials-demos%2Fmain%2F.adb%2Fmain.json)
+
+| Option 1 | Option 2 |
+| --- | --- |
+|*Deploy new workspace in your RG with Storage Account and Secret scope. Use Storage Account for data processing.*<br>[![deploy_azure_lakehouse](.adb/deploy-to-lakehouse.svg)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fadb-essentials%2Fadb-essentials-demos%2Fmain%2F.adb%2Fmain.json)<br>|**Use your existing Azure Databricks workspace** *with this Demo. Check out this repository and use the local DBFS for data processing without a Secret Scope.* |
+
 
 ## Azure Databricks Lakehouse
 
