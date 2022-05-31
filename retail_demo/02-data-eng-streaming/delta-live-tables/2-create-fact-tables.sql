@@ -7,7 +7,7 @@
 
 -- COMMAND ----------
 
-create live table orders_lineitems_fct(
+create or refresh streaming live table orders_lineitems_fct(
 )
 comment "Orders and line items joined as fact table"
 tblproperties(pipelines.autoOptimize.zOrderCols = "ol_orderdatekey,l_partkey")
@@ -38,6 +38,6 @@ as select
   l_shipinstruct as ol_shipinstruct,
   l_shipmode as ol_shipmode,
   l_comment as ol_line_comment
-from live.orders_landing o
-inner join live.lineitem_landing l
+from stream(live.orders_landing) o
+inner join stream(live.lineitem_landing) l
 on o.o_orderkey = l.l_orderkey
